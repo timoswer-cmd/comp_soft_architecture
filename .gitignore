@@ -1,0 +1,31 @@
+# Conda environments
+conda-env/
+.envs/
+
+# Data files (usually large)
+data/
+!data/raw/
+
+# Snakemake
+.snakemake/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.thumbs.db
+
+# Output directories (keep configs, ignore large outputs)
+*.pyc

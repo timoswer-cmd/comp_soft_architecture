@@ -1,0 +1,11 @@
+pdb_files:
+  - 2ito
+  - 1A2C
+
+dock_dir: data/docking
+
+raw_dir: data/raw
+
+proc_dir: data/processed
+
+scripts_dir: scripts

@@ -1,0 +1,16 @@
+name: dock_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - snakemake-minimal=7.32
+  - openbabel=3.1
+  - pymol-open-source=2.5
+  - rdkit=2023.09
+  - matplotlib=3.8
+  - pillow=10.0
+  - numpy=1.24
+  - pip
+  - pip:
+    - smina  # Python wrapper for smina docking
