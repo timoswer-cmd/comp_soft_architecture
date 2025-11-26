@@ -119,7 +119,7 @@ rule split_docking_poses:
         outdir=lambda wildcards: os.path.join(DOCK_DIR, wildcards.pdb, "poses")
     shell:
         "mkdir -p {params.outdir} {params.outdir}/../benchmarks {params.outdir}/../logs && "
-        "( /usr/bin/time -v -o {params.outdir}/../logs/split_docking_poses.time.txt -- bash -lc \"python3 - << 'SPLIT_SCRIPT'\nimport os\nfrom openbabel import pybel\n\nsdf_file = \"{input}\"\nout_dir = \"{params.outdir}\"\nmolecules = pybel.readfile(\"sdf\", sdf_file)\nfor i, mol in enumerate(molecules):\n    out_path = os.path.join(out_dir, f\"pose_{{i:02d}}.sdf\")\n    mol.write(\"sdf\", out_path, overwrite=True)\n\ndone_path = os.path.join(out_dir, \".done\")\nwith open(done_path, \"w\") as f:\n    f.write(\"done\")\nSPLIT_SCRIPT\" ) > {log} 2>&1"
+        "( /usr/bin/time -v -o {params.outdir}/../logs/split_docking_poses.time.txt -- bash -lc \"python3 - << 'SPLIT_SCRIPT'\nfrom rdkit import Chem\nfrom rdkit.Chem import rdmolfiles\nimport os\n\nsdf_file = \"{input}\"\nout_dir = \"{params.outdir}\"\nsuppl = Chem.SDMolSupplier(sdf_file, removeHs=False)\nfor i, mol in enumerate(suppl):\n    if mol is None:\n        continue\n    writer = rdmolfiles.SDWriter(os.path.join(out_dir, f\"pose_{{i:02d}}.sdf\"))\n    writer.write(mol)\n    writer.close()\nwith open(os.path.join(out_dir, \".done\"), \"w\") as f:\n    f.write(\"done\")\nSPLIT_SCRIPT\" ) > {log} 2>&1"
 
 
 rule visualize_poses:
