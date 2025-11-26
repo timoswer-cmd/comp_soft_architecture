@@ -2,9 +2,11 @@
 conda-env/
 .envs/
 
-# Data files (usually large)
-data/
-!data/raw/
+# results files
+results/
+
+# resources files
+resources/
 
 # Snakemake
 .snakemake/

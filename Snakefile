@@ -37,11 +37,7 @@ rule prepare_structures:
         protein=os.path.join(PROC_DIR, "{pdb}", "{pdb}_protein.pdb"),
         ligand=os.path.join(PROC_DIR, "{pdb}", "{pdb}_ligand.pdb")
     conda:
-        "environment.yml"
-    log:
-        os.path.join(DOCK_DIR, "{pdb}", "logs", "prepare_structures.log")
-    benchmark:
-        os.path.join(DOCK_DIR, "{pdb}", "benchmarks", "prepare_structures.bench.txt")
+        "env/environment.yml"
     script:
         os.path.join(SCRIPTS, "prepare_structures.py")
 
@@ -54,11 +50,7 @@ rule convert_to_pdbqt:
         protein_qt=os.path.join(PROC_DIR, "{pdb}", "{pdb}_protein.pdbqt"),
         ligand_qt=os.path.join(PROC_DIR, "{pdb}", "{pdb}_ligand.pdbqt")
     conda:
-        "environment.yml"
-    log:
-        os.path.join(DOCK_DIR, "{pdb}", "logs", "convert_to_pdbqt.log")
-    benchmark:
-        os.path.join(DOCK_DIR, "{pdb}", "benchmarks", "convert_to_pdbqt.bench.txt")
+        "env/environment.yml"
     script:
         os.path.join(SCRIPTS, "convert_to_pdbqt.py")
 
@@ -74,27 +66,21 @@ rule run_docking:
         num_modes=5,
         autobox_add=4
     conda:
-        "environment.yml"
-    log:
-        os.path.join(DOCK_DIR, "{pdb}", "logs", "run_docking.log")
-    benchmark:
-        os.path.join(DOCK_DIR, "{pdb}", "benchmarks", "run_docking.bench.txt")
+        "env/environment.yml"
     shell:
-        "mkdir -p {params.outdir} {params.outdir}/logs {params.outdir}/benchmarks && "
-        "( /usr/bin/time -v -o {params.outdir}/logs/run_docking.time.txt -- bash -lc \"smina -r {input.protein_qt} -l {input.ligand_qt} --autobox_ligand {input.ligand_qt} --autobox_add {params.autobox_add} --num_modes {params.num_modes} -o {output}\" ) > {log} 2>&1"
+        "mkdir -p {params.outdir} && "
+        "smina -r {input.protein_qt} -l {input.ligand_qt} "
+        "--autobox_ligand {input.ligand_qt} --autobox_add {params.autobox_add} "
+        "--num_modes {params.num_modes} -o {output}"
 
 
 rule postprocess:
-    input:
+    input:sn
         os.path.join(DOCK_DIR, "{pdb}", "{pdb}_docked.sdf")
     output:
         os.path.join(DOCK_DIR, "{pdb}", "{pdb}_scores.csv")
     conda:
-        "environment.yml"
-    log:
-        os.path.join(DOCK_DIR, "{pdb}", "logs", "postprocess.log")
-    benchmark:
-        os.path.join(DOCK_DIR, "{pdb}", "benchmarks", "postprocess.bench.txt")
+        "env/environment.yml"
     script:
         os.path.join(SCRIPTS, "run_analysis.py")
 
@@ -110,16 +96,28 @@ rule split_docking_poses:
         os.path.join(DOCK_DIR, "{pdb}", "poses", "pose_04.sdf"),
         os.path.join(DOCK_DIR, "{pdb}", "poses", ".done")
     conda:
-        "environment.yml"
-    log:
-        os.path.join(DOCK_DIR, "{pdb}", "poses", "split_docking_poses.log")
-    benchmark:
-        os.path.join(DOCK_DIR, "{pdb}", "benchmarks", "split_docking_poses.bench.txt")
+        "env/environment.yml"
     params:
         outdir=lambda wildcards: os.path.join(DOCK_DIR, wildcards.pdb, "poses")
     shell:
-        "mkdir -p {params.outdir} {params.outdir}/../benchmarks {params.outdir}/../logs && "
-        "( /usr/bin/time -v -o {params.outdir}/../logs/split_docking_poses.time.txt -- bash -lc \"python3 - << 'SPLIT_SCRIPT'\nfrom rdkit import Chem\nfrom rdkit.Chem import rdmolfiles\nimport os\n\nsdf_file = \"{input}\"\nout_dir = \"{params.outdir}\"\nsuppl = Chem.SDMolSupplier(sdf_file, removeHs=False)\nfor i, mol in enumerate(suppl):\n    if mol is None:\n        continue\n    writer = rdmolfiles.SDWriter(os.path.join(out_dir, f\"pose_{{i:02d}}.sdf\"))\n    writer.write(mol)\n    writer.close()\nwith open(os.path.join(out_dir, \".done\"), \"w\") as f:\n    f.write(\"done\")\nSPLIT_SCRIPT\" ) > {log} 2>&1"
+        """
+        mkdir -p {params.outdir} && \\
+        python3 << 'SPLIT_SCRIPT'
+import os
+from openbabel import pybel
+
+sdf_file = "{input}"
+out_dir = "{params.outdir}"
+molecules = pybel.readfile("sdf", sdf_file)
+for i, mol in enumerate(molecules):
+    out_path = os.path.join(out_dir, f"pose_{{i:02d}}.sdf")
+    mol.write("sdf", out_path, overwrite=True)
+
+done_path = os.path.join(out_dir, ".done")
+with open(done_path, "w") as f:
+    f.write("done")
+SPLIT_SCRIPT
+        """
 
 
 rule visualize_poses:
@@ -130,10 +128,6 @@ rule visualize_poses:
     output:
         os.path.join(DOCK_DIR, "{pdb}", "visualize", "{pose}.png")
     conda:
-        "environment.yml"
-    log:
-        os.path.join(DOCK_DIR, "{pdb}", "logs", "visualize_poses.{pose}.log")
-    benchmark:
-        os.path.join(DOCK_DIR, "{pdb}", "benchmarks", "visualize_poses.{pose}.bench.txt")
+        "env/environment.yml"
     script:
         os.path.join(SCRIPTS, "visualize_pose.py")

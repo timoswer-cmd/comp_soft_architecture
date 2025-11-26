@@ -2,10 +2,10 @@ pdb_files:
   - 2ito
   - 1A2C
 
-dock_dir: data/docking
+dock_dir: results/docking
 
-raw_dir: data/raw
+raw_dir: resources
 
-proc_dir: data/processed
+proc_dir: results/processed
 
 scripts_dir: scripts
