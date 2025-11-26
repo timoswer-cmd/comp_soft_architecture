@@ -151,7 +151,7 @@ https://www.rcsb.org/structure/2XNI
 
 ## Contact
 
-timo.suter1@students.fhnw.ch
+FHNW
 
 ## Known limitations
 
